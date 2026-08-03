@@ -1,5 +1,7 @@
 package com.timurtokaev.bankaccess.department;
 
+import com.timurtokaev.bankaccess.common.error.ConflictException;
+import com.timurtokaev.bankaccess.common.error.ResourceNotFoundException;
 import com.timurtokaev.bankaccess.department.dto.DepartmentCreateRequest;
 import com.timurtokaev.bankaccess.department.dto.DepartmentResponse;
 import org.springframework.stereotype.Service;
@@ -37,7 +39,7 @@ public class DepartmentService {
         String name = normalizeName(request.name());
 
         if (departmentRepository.existsByCode(code)) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                     "Department with code '" + code + "' already exists"
             );
         }
@@ -49,24 +51,28 @@ public class DepartmentService {
         }
 
         Department department = new Department(code, name, parent);
-        Department savedDepartment = departmentRepository.saveAndFlush(department);
+        Department savedDepartment =
+                departmentRepository.saveAndFlush(department);
 
         return toResponse(savedDepartment);
     }
 
     private Department getDepartment(UUID id) {
         return departmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                         "Department not found: " + id
                 ));
     }
 
     private String normalizeCode(String code) {
         if (code == null || code.isBlank()) {
-            throw new IllegalArgumentException("Department code must not be empty");
+            throw new IllegalArgumentException(
+                    "Department code must not be empty"
+            );
         }
 
-        String normalizedCode = code.trim().toUpperCase(Locale.ROOT);
+        String normalizedCode =
+                code.trim().toUpperCase(Locale.ROOT);
 
         if (normalizedCode.length() > 50) {
             throw new IllegalArgumentException(
@@ -79,7 +85,9 @@ public class DepartmentService {
 
     private String normalizeName(String name) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Department name must not be empty");
+            throw new IllegalArgumentException(
+                    "Department name must not be empty"
+            );
         }
 
         String normalizedName = name.trim();

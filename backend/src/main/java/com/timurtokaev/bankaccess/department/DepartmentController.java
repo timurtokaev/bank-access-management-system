@@ -2,6 +2,7 @@ package com.timurtokaev.bankaccess.department;
 
 import com.timurtokaev.bankaccess.department.dto.DepartmentCreateRequest;
 import com.timurtokaev.bankaccess.department.dto.DepartmentResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,7 +38,7 @@ public class DepartmentController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DepartmentResponse create(
-            @RequestBody DepartmentCreateRequest request
+            @Valid @RequestBody DepartmentCreateRequest request
     ) {
         return departmentService.create(request);
     }

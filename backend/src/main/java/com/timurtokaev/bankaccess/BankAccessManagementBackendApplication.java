@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BankAccessManagementBackendApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BankAccessManagementBackendApplication.class, args);
+		SpringApplication.run(
+				BankAccessManagementBackendApplication.class,
+				args
+		);
 	}
-
 }
