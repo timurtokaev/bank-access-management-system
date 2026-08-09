@@ -4,6 +4,7 @@ import com.timurtokaev.bankaccess.common.error.ConflictException;
 import com.timurtokaev.bankaccess.common.error.ResourceNotFoundException;
 import com.timurtokaev.bankaccess.department.dto.DepartmentCreateRequest;
 import com.timurtokaev.bankaccess.department.dto.DepartmentResponse;
+import com.timurtokaev.bankaccess.department.dto.DepartmentUpdateRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,24 +18,28 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
 
-    public DepartmentService(DepartmentRepository departmentRepository) {
+    public DepartmentService(
+            DepartmentRepository departmentRepository
+    ) {
         this.departmentRepository = departmentRepository;
     }
 
     public List<DepartmentResponse> findAllActive() {
-        return departmentRepository.findAllByActiveTrueOrderByNameAsc()
+        return departmentRepository
+                .findAllByActiveTrueOrderByNameAsc()
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     public DepartmentResponse findById(UUID id) {
-        Department department = getDepartment(id);
-        return toResponse(department);
+        return toResponse(getDepartment(id));
     }
 
     @Transactional
-    public DepartmentResponse create(DepartmentCreateRequest request) {
+    public DepartmentResponse create(
+            DepartmentCreateRequest request
+    ) {
         String code = normalizeCode(request.code());
         String name = normalizeName(request.name());
 
@@ -50,11 +55,63 @@ public class DepartmentService {
             parent = getDepartment(request.parentId());
         }
 
-        Department department = new Department(code, name, parent);
+        Department department =
+                new Department(code, name, parent);
+
         Department savedDepartment =
                 departmentRepository.saveAndFlush(department);
 
         return toResponse(savedDepartment);
+    }
+
+    @Transactional
+    public DepartmentResponse update(
+            UUID id,
+            DepartmentUpdateRequest request
+    ) {
+        Department department = getDepartment(id);
+
+        String code = normalizeCode(request.code());
+        String name = normalizeName(request.name());
+
+        if (departmentRepository.existsByCodeAndIdNot(code, id)) {
+            throw new ConflictException(
+                    "Department with code '" + code + "' already exists"
+            );
+        }
+
+        Department parent = null;
+
+        if (request.parentId() != null) {
+            if (request.parentId().equals(id)) {
+                throw new IllegalArgumentException(
+                        "Department cannot be its own parent"
+                );
+            }
+
+            parent = getDepartment(request.parentId());
+        }
+
+        department.setCode(code);
+        department.setName(name);
+        department.setParent(parent);
+
+        Department savedDepartment =
+                departmentRepository.saveAndFlush(department);
+
+        return toResponse(savedDepartment);
+    }
+
+    @Transactional
+    public void deactivate(UUID id) {
+        Department department = getDepartment(id);
+
+        if (!department.isActive()) {
+            return;
+        }
+
+        department.setActive(false);
+        departmentRepository.saveAndFlush(department);
     }
 
     private Department getDepartment(UUID id) {
@@ -101,7 +158,9 @@ public class DepartmentService {
         return normalizedName;
     }
 
-    private DepartmentResponse toResponse(Department department) {
+    private DepartmentResponse toResponse(
+            Department department
+    ) {
         UUID parentId = department.getParent() == null
                 ? null
                 : department.getParent().getId();
