@@ -19,13 +19,15 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 "/api/departments/**",
-                                "/api/users/**"
+                                "/api/users/**",
+                                "/api/permissions/**"
                         )
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/departments/**",
-                                "/api/users/**"
+                                "/api/users/**",
+                                "/api/permissions/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
