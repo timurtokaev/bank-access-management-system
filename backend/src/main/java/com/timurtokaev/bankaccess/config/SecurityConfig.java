@@ -20,14 +20,16 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/departments/**",
                                 "/api/users/**",
-                                "/api/permissions/**"
+                                "/api/permissions/**",
+                                "/api/roles/**"
                         )
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/api/departments/**",
                                 "/api/users/**",
-                                "/api/permissions/**"
+                                "/api/permissions/**",
+                                "/api/roles/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
