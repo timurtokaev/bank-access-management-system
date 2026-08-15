@@ -18,3 +18,9 @@ spring:
 
 server:
   port: 8080
+
+app:
+  security:
+    tokens:
+      access-token-ttl: 10m
+      refresh-token-ttl: 30d
