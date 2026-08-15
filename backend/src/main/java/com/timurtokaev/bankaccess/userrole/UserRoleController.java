@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.timurtokaev.bankaccess.userrole.dto.UserEffectivePermissionsResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,7 +34,12 @@ public class UserRoleController {
     ) {
         return userRoleService.findAllByUser(userId);
     }
-
+    @GetMapping("/users/{userId}/effective-permissions")
+    public UserEffectivePermissionsResponse findEffectivePermissions(
+            @PathVariable UUID userId
+    ) {
+        return userRoleService.findEffectivePermissions(userId);
+    }
     @GetMapping("/roles/{roleId}/users")
     public List<UserRoleResponse> findAllByRole(
             @PathVariable UUID roleId

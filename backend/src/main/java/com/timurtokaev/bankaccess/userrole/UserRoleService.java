@@ -11,7 +11,7 @@ import com.timurtokaev.bankaccess.userrole.dto.UserRoleAssignRequest;
 import com.timurtokaev.bankaccess.userrole.dto.UserRoleResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.timurtokaev.bankaccess.userrole.dto.UserEffectivePermissionsResponse;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -60,7 +60,36 @@ public class UserRoleService {
                 .map(this::toResponse)
                 .toList();
     }
+    public UserEffectivePermissionsResponse findEffectivePermissions(
+            UUID userId
+    ) {
+        User user = getUser(userId);
 
+        OffsetDateTime evaluatedAt =
+                OffsetDateTime.now(ZoneOffset.UTC);
+
+        List<String> permissionCodes;
+
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            permissionCodes =
+                    userRoleRepository.findEffectivePermissionCodes(
+                            user.getId(),
+                            UserStatus.ACTIVE,
+                            evaluatedAt
+                    );
+        } else {
+            permissionCodes = List.of();
+        }
+
+        return new UserEffectivePermissionsResponse(
+                user.getId(),
+                user.getEmployeeNumber(),
+                user.getUsername(),
+                user.getStatus(),
+                evaluatedAt,
+                permissionCodes
+        );
+    }
     @Transactional
     public UserRoleResponse assign(
             UUID userId,
