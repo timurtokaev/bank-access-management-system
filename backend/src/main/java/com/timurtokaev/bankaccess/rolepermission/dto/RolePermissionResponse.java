@@ -1,4 +1,22 @@
 package com.timurtokaev.bankaccess.rolepermission.dto;
 
-public class RolePermissionResponse {
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+public record RolePermissionResponse(
+
+        UUID roleId,
+
+        String roleCode,
+
+        String roleName,
+
+        UUID permissionId,
+
+        String permissionCode,
+
+        String permissionName,
+
+        OffsetDateTime grantedAt
+) {
 }
