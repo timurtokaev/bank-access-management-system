@@ -8,7 +8,10 @@ import java.security.SecureRandom;
 import java.time.Clock;
 
 @Configuration
-@EnableConfigurationProperties(AuthTokenProperties.class)
+@EnableConfigurationProperties({
+        AuthTokenProperties.class,
+        JwtProperties.class
+})
 public class AuthConfig {
 
     @Bean
