@@ -14,6 +14,15 @@ import java.util.UUID;
 public interface RefreshTokenRepository
         extends JpaRepository<RefreshToken, UUID> {
 
+    @Query("""
+            SELECT refreshToken.user.id
+            FROM RefreshToken refreshToken
+            WHERE refreshToken.tokenHash = :tokenHash
+            """)
+    Optional<UUID> findUserIdByTokenHash(
+            @Param("tokenHash") String tokenHash
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT refreshToken

@@ -2,6 +2,7 @@ package com.timurtokaev.bankaccess.auth;
 
 import com.timurtokaev.bankaccess.common.error.UnauthorizedException;
 import com.timurtokaev.bankaccess.user.User;
+import com.timurtokaev.bankaccess.user.UserRepository;
 import com.timurtokaev.bankaccess.user.UserStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +34,20 @@ public class RefreshTokenService {
             Base64.getUrlEncoder().withoutPadding();
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
     private final AuthTokenProperties tokenProperties;
     private final Clock clock;
     private final SecureRandom secureRandom;
 
     public RefreshTokenService(
             RefreshTokenRepository refreshTokenRepository,
+            UserRepository userRepository,
             AuthTokenProperties tokenProperties,
             Clock clock,
             SecureRandom secureRandom
     ) {
         this.refreshTokenRepository = refreshTokenRepository;
+        this.userRepository = userRepository;
         this.tokenProperties = tokenProperties;
         this.clock = clock;
         this.secureRandom = secureRandom;
@@ -57,8 +61,18 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public IssuedRefreshToken rotate(String rawToken) {
+    public RotatedRefreshToken rotate(
+            String rawToken
+    ) {
         String tokenHash = hashRawToken(rawToken);
+
+        UUID expectedUserId = refreshTokenRepository
+                .findUserIdByTokenHash(tokenHash)
+                .orElseThrow(UnauthorizedException::new);
+
+        User user = userRepository
+                .findByIdForUpdate(expectedUserId)
+                .orElseThrow(UnauthorizedException::new);
 
         RefreshToken storedToken = refreshTokenRepository
                 .findByTokenHashForUpdate(tokenHash)
@@ -66,21 +80,32 @@ public class RefreshTokenService {
 
         OffsetDateTime rotatedAt = currentTime();
 
-        if (!storedToken.isUsableAt(rotatedAt)) {
+        if (!Objects.equals(
+                storedToken.getUser().getId(),
+                expectedUserId
+        )) {
             throw new UnauthorizedException();
         }
 
-        if (storedToken.getUser().getStatus()
-                != UserStatus.ACTIVE) {
+        if (!storedToken.isUsableAt(rotatedAt)
+                || user.getStatus() != UserStatus.ACTIVE) {
             throw new UnauthorizedException();
         }
 
         storedToken.revoke(rotatedAt);
-        refreshTokenRepository.saveAndFlush(storedToken);
 
-        return issue(
-                storedToken.getUser(),
+        refreshTokenRepository.saveAndFlush(
+                storedToken
+        );
+
+        IssuedRefreshToken issuedToken = issue(
+                user,
                 rotatedAt
+        );
+
+        return new RotatedRefreshToken(
+                user.getId(),
+                issuedToken
         );
     }
 
