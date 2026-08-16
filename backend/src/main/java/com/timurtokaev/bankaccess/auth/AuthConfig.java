@@ -10,7 +10,8 @@ import java.time.Clock;
 @Configuration
 @EnableConfigurationProperties({
         AuthTokenProperties.class,
-        JwtProperties.class
+        JwtProperties.class,
+        LoginSecurityProperties.class
 })
 public class AuthConfig {
 

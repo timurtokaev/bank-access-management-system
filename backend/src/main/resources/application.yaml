@@ -25,6 +25,10 @@ app:
       access-token-ttl: 10m
       refresh-token-ttl: 30d
 
+    login:
+      max-failed-attempts: ${BANK_ACCESS_LOGIN_MAX_FAILED_ATTEMPTS:5}
+      lock-duration: ${BANK_ACCESS_LOGIN_LOCK_DURATION:15m}
+
     jwt:
       secret-base64: "${BANK_ACCESS_JWT_SECRET:}"
       issuer: "${BANK_ACCESS_JWT_ISSUER:bank-access-management-backend}"
