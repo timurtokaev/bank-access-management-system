@@ -22,17 +22,21 @@ import java.util.UUID;
 public class UserRoleService {
 
     private final UserRoleRepository userRoleRepository;
+    private final EffectivePermissionService effectivePermissionService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
     public UserRoleService(
             UserRoleRepository userRoleRepository,
             UserRepository userRepository,
-            RoleRepository roleRepository
+            RoleRepository roleRepository,
+            EffectivePermissionService effectivePermissionService
     ) {
         this.userRoleRepository = userRoleRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.effectivePermissionService =
+                effectivePermissionService;
     }
 
     public List<UserRoleResponse> findAllByUser(
@@ -65,29 +69,16 @@ public class UserRoleService {
     ) {
         User user = getUser(userId);
 
-        OffsetDateTime evaluatedAt =
-                OffsetDateTime.now(ZoneOffset.UTC);
-
-        List<String> permissionCodes;
-
-        if (user.getStatus() == UserStatus.ACTIVE) {
-            permissionCodes =
-                    userRoleRepository.findEffectivePermissionCodes(
-                            user.getId(),
-                            UserStatus.ACTIVE,
-                            evaluatedAt
-                    );
-        } else {
-            permissionCodes = List.of();
-        }
+        EffectivePermissionService.Result result =
+                effectivePermissionService.resolveFor(user);
 
         return new UserEffectivePermissionsResponse(
                 user.getId(),
                 user.getEmployeeNumber(),
                 user.getUsername(),
                 user.getStatus(),
-                evaluatedAt,
-                permissionCodes
+                result.evaluatedAt(),
+                result.permissionCodes()
         );
     }
     @Transactional
