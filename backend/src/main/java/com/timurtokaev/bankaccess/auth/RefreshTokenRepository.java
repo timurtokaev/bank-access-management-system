@@ -35,8 +35,7 @@ public interface RefreshTokenRepository
     );
 
     @Modifying(
-            flushAutomatically = true,
-            clearAutomatically = true
+            flushAutomatically = true
     )
     @Query("""
             UPDATE RefreshToken refreshToken

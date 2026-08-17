@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 
 import javax.crypto.SecretKey;
 import java.time.Clock;
@@ -18,6 +19,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AccessTokenServiceTest {
 
@@ -54,10 +59,19 @@ class AccessTokenServiceTest {
         JwtEncoder encoder =
                 jwtConfig.jwtEncoder(secretKey);
 
+        UserAccessTokenValidator userValidator =
+                mock(UserAccessTokenValidator.class);
+
+        when(userValidator.validate(any(Jwt.class)))
+                .thenReturn(
+                        OAuth2TokenValidatorResult.success()
+                );
+
         JwtDecoder decoder =
                 jwtConfig.jwtDecoder(
                         secretKey,
-                        jwtProperties
+                        jwtProperties,
+                        userValidator
                 );
 
         AccessTokenService service =
@@ -79,7 +93,8 @@ class AccessTokenServiceTest {
                         "USER_VIEW",
                         "ROLE_VIEW",
                         "USER_VIEW"
-                )
+                ),
+                7L
         );
 
         Jwt decodedToken = decoder.decode(
@@ -107,6 +122,12 @@ class AccessTokenServiceTest {
                         "permissions"
                 )
         );
+
+        Number authVersion = decodedToken.getClaim(
+                "auth_version"
+        );
+
+        assertEquals(7L, authVersion.longValue());
 
         assertEquals(
                 jwtProperties.issuer(),
@@ -145,6 +166,42 @@ class AccessTokenServiceTest {
         assertFalse(
                 issuedToken.toString().contains(
                         issuedToken.token()
+                )
+        );
+    }
+
+    @Test
+    void shouldRejectNegativeAuthenticationVersion() {
+        JwtProperties jwtProperties = new JwtProperties(
+                TEST_SECRET_BASE64,
+                "test-issuer",
+                "test-audience"
+        );
+
+        JwtConfig jwtConfig = new JwtConfig();
+
+        AccessTokenService service =
+                new AccessTokenService(
+                        jwtConfig.jwtEncoder(
+                                jwtConfig.jwtSecretKey(
+                                        jwtProperties
+                                )
+                        ),
+                        jwtProperties,
+                        new AuthTokenProperties(
+                                Duration.ofMinutes(10),
+                                Duration.ofDays(30)
+                        ),
+                        Clock.systemUTC()
+                );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.issue(
+                        UUID.randomUUID(),
+                        "admin",
+                        List.of("USER_VIEW"),
+                        -1L
                 )
         );
     }

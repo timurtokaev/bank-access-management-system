@@ -22,15 +22,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserSessionRevoker userSessionRevoker;
 
     public UserService(
             UserRepository userRepository,
             DepartmentRepository departmentRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            UserSessionRevoker userSessionRevoker
     ) {
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userSessionRevoker = userSessionRevoker;
     }
 
     public List<UserResponse> findAll() {
@@ -115,7 +118,7 @@ public class UserService {
             UUID id,
             UserUpdateRequest request
     ) {
-        User user = getUser(id);
+        User user = getUserForUpdate(id);
 
         String employeeNumber =
                 normalizeEmployeeNumber(request.employeeNumber());
@@ -150,13 +153,17 @@ public class UserService {
 
         UserStatus previousStatus = user.getStatus();
 
+        boolean revokeSessions =
+                previousStatus != UserStatus.ACTIVE
+                        || newStatus != UserStatus.ACTIVE;
+
         user.setEmployeeNumber(employeeNumber);
         user.setUsername(username);
         user.setEmail(email);
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setDepartment(department);
-        user.setStatus(newStatus);
+        user.changeStatus(newStatus);
 
         if (newStatus == UserStatus.ACTIVE
                 && previousStatus != UserStatus.ACTIVE) {
@@ -170,25 +177,36 @@ public class UserService {
 
         User savedUser = userRepository.saveAndFlush(user);
 
+        if (revokeSessions) {
+            userSessionRevoker.revokeAllActiveForUser(id);
+        }
+
         return toResponse(savedUser);
     }
 
     @Transactional
     public void deactivate(UUID id) {
-        User user = getUser(id);
+        User user = getUserForUpdate(id);
 
-        if (user.getStatus() == UserStatus.INACTIVE) {
-            return;
+        if (user.getStatus() != UserStatus.INACTIVE) {
+            user.changeStatus(UserStatus.INACTIVE);
+            user.setLockedUntil(null);
+
+            userRepository.saveAndFlush(user);
         }
 
-        user.setStatus(UserStatus.INACTIVE);
-        user.setLockedUntil(null);
-
-        userRepository.saveAndFlush(user);
+        userSessionRevoker.revokeAllActiveForUser(id);
     }
 
     private User getUser(UUID id) {
         return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found: " + id
+                ));
+    }
+
+    private User getUserForUpdate(UUID id) {
+        return userRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "User not found: " + id
                 ));

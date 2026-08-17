@@ -71,7 +71,8 @@ public class JwtConfig {
     @Bean
     public JwtDecoder jwtDecoder(
             SecretKey jwtSecretKey,
-            JwtProperties properties
+            JwtProperties properties,
+            UserAccessTokenValidator userValidator
     ) {
         NimbusJwtDecoder decoder =
                 NimbusJwtDecoder
@@ -89,11 +90,22 @@ public class JwtConfig {
                         properties.audience()
                 );
 
-        decoder.setJwtValidator(
+        OAuth2TokenValidator<Jwt> standardValidator =
                 new DelegatingOAuth2TokenValidator<>(
                         issuerValidator,
                         audienceValidator
-                )
+                );
+
+        decoder.setJwtValidator(jwt -> {
+            var standardResult =
+                    standardValidator.validate(jwt);
+
+            if (standardResult.hasErrors()) {
+                return standardResult;
+            }
+
+            return userValidator.validate(jwt);
+        }
         );
 
         return decoder;

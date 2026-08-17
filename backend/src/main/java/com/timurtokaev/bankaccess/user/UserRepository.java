@@ -34,6 +34,18 @@ public interface UserRepository extends JpaRepository<User, UUID> {
             @Param("id") UUID id
     );
 
+    @Query("""
+            SELECT new com.timurtokaev.bankaccess.user.UserAuthenticationState(
+                account.status,
+                account.authVersion
+            )
+            FROM User account
+            WHERE account.id = :id
+            """)
+    Optional<UserAuthenticationState> findAuthenticationStateById(
+            @Param("id") UUID id
+    );
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findByEmployeeNumber(String employeeNumber);

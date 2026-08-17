@@ -3,6 +3,7 @@ package com.timurtokaev.bankaccess.auth;
 import com.timurtokaev.bankaccess.common.error.UnauthorizedException;
 import com.timurtokaev.bankaccess.user.User;
 import com.timurtokaev.bankaccess.user.UserRepository;
+import com.timurtokaev.bankaccess.user.UserSessionRevoker;
 import com.timurtokaev.bankaccess.user.UserStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,7 @@ import java.util.regex.Pattern;
 
 @Service
 @Transactional(readOnly = true)
-public class RefreshTokenService {
+public class RefreshTokenService implements UserSessionRevoker {
 
     private static final int TOKEN_SIZE_BYTES = 32;
 
@@ -132,11 +133,18 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    @Override
     public int revokeAllActiveForUser(UUID userId) {
         Objects.requireNonNull(
                 userId,
                 "User ID must not be null"
         );
+
+        userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot revoke sessions for missing user: "
+                                + userId
+                ));
 
         OffsetDateTime revokedAt = currentTime();
 

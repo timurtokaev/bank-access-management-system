@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -100,6 +101,12 @@ public class User {
     private OffsetDateTime lastLoginAt;
 
     @Column(
+            name = "auth_version",
+            nullable = false
+    )
+    private long authVersion = 0;
+
+    @Column(
             name = "created_at",
             nullable = false,
             updatable = false
@@ -133,6 +140,7 @@ public class User {
         this.department = department;
         this.status = UserStatus.ACTIVE;
         this.failedLoginAttempts = 0;
+        this.authVersion = 0;
     }
 
     @PrePersist
@@ -221,8 +229,20 @@ public class User {
         return status;
     }
 
-    public void setStatus(UserStatus status) {
-        this.status = status;
+    public boolean changeStatus(UserStatus status) {
+        UserStatus requiredStatus = Objects.requireNonNull(
+                status,
+                "User status must not be null"
+        );
+
+        if (this.status == requiredStatus) {
+            return false;
+        }
+
+        this.status = requiredStatus;
+        advanceAuthVersion();
+
+        return true;
     }
 
     public int getFailedLoginAttempts() {
@@ -247,6 +267,14 @@ public class User {
 
     public void setLastLoginAt(OffsetDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
+    }
+
+    public long getAuthVersion() {
+        return authVersion;
+    }
+
+    private void advanceAuthVersion() {
+        authVersion = Math.incrementExact(authVersion);
     }
 
     public OffsetDateTime getCreatedAt() {

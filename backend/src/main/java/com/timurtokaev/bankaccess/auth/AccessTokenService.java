@@ -39,7 +39,8 @@ public class AccessTokenService {
     public IssuedAccessToken issue(
             UUID userId,
             String username,
-            Collection<String> permissionCodes
+            Collection<String> permissionCodes,
+            long authVersion
     ) {
         if (userId == null) {
             throw new IllegalArgumentException(
@@ -52,6 +53,12 @@ public class AccessTokenService {
 
         List<String> normalizedPermissions =
                 normalizePermissions(permissionCodes);
+
+        if (authVersion < 0) {
+            throw new IllegalArgumentException(
+                    "Authentication version must not be negative"
+            );
+        }
 
         Instant issuedAt = clock.instant();
 
@@ -75,6 +82,10 @@ public class AccessTokenService {
                 .claim(
                         "permissions",
                         normalizedPermissions
+                )
+                .claim(
+                        "auth_version",
+                        authVersion
                 )
                 .build();
 

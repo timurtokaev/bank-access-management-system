@@ -291,6 +291,52 @@ class RefreshTokenServiceTest {
         );
     }
 
+    @Test
+    void shouldLockUserBeforeRevokingAllActiveTokens() {
+        User user = createUser(UserStatus.ACTIVE);
+
+        when(userRepository.findByIdForUpdate(USER_ID))
+                .thenReturn(Optional.of(user));
+
+        when(
+                refreshTokenRepository
+                        .revokeAllActiveByUserId(
+                                USER_ID,
+                                NOW
+                        )
+        ).thenReturn(3);
+
+        int revoked = refreshTokenService
+                .revokeAllActiveForUser(USER_ID);
+
+        assertEquals(3, revoked);
+
+        InOrder revokeOrder = inOrder(
+                userRepository,
+                refreshTokenRepository
+        );
+
+        revokeOrder.verify(userRepository)
+                .findByIdForUpdate(USER_ID);
+
+        revokeOrder.verify(refreshTokenRepository)
+                .revokeAllActiveByUserId(USER_ID, NOW);
+    }
+
+    @Test
+    void shouldRejectNullUserIdBeforeBulkRevocation() {
+        assertThrows(
+                NullPointerException.class,
+                () -> refreshTokenService
+                        .revokeAllActiveForUser(null)
+        );
+
+        verifyNoInteractions(
+                userRepository,
+                refreshTokenRepository
+        );
+    }
+
     private void stubLockedLookup(
             User user,
             RefreshToken storedToken
@@ -366,7 +412,7 @@ class RefreshTokenServiceTest {
                 USER_ID
         );
 
-        user.setStatus(status);
+        user.changeStatus(status);
 
         return user;
     }

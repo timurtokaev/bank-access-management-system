@@ -56,6 +56,7 @@ erDiagram
         integer failed_login_attempts
         timestamptz locked_until
         timestamptz last_login_at
+        bigint auth_version
         timestamptz created_at
         timestamptz updated_at
     }
@@ -76,6 +77,7 @@ erDiagram
         varchar code UK
         varchar name
         text description
+        boolean system_permission
         boolean active
         timestamptz created_at
         timestamptz updated_at
@@ -174,6 +176,7 @@ Stores bank employees and their authentication accounts.
 | `failed_login_attempts` | `integer` | Yes | Consecutive failed login attempts. |
 | `locked_until` | `timestamptz` | No | Temporary account lock expiration. |
 | `last_login_at` | `timestamptz` | No | Last successful login. |
+| `auth_version` | `bigint` | Yes | Non-negative account authentication epoch. |
 | `created_at` | `timestamptz` | Yes | Creation timestamp. |
 | `updated_at` | `timestamptz` | Yes | Last update timestamp. |
 
@@ -186,6 +189,13 @@ Supported account statuses:
 | `LOCKED` | The account was locked for security reasons. |
 
 Passwords must never be stored in plain text.
+
+`auth_version` is increased on every account-status transition. An access token
+is accepted only while the account is `ACTIVE` and the token claim matches the
+current database value. This prevents an old access token from becoming valid
+again after account reactivation. Refresh tokens are revoked by administrative
+status changes and before an expired automatic lock returns to `ACTIVE`; token
+rotation rejects an account while it remains `LOCKED`.
 
 ### 4.3 `roles`
 
@@ -204,6 +214,10 @@ The `system_role` field identifies built-in roles that cannot be deleted.
 ### 4.4 `permissions`
 
 Stores individual operations that may be granted to roles.
+
+The `system_permission` field identifies built-in permission codes owned by
+the application. System permissions cannot be modified or deactivated through
+the API and are always active; custom permissions default to non-system.
 
 Permission codes use the following format:
 
@@ -330,7 +344,16 @@ The initial database migration should contain the following indexes:
   `role_permissions`.
 - Expired refresh tokens may be physically deleted after the retention period.
 
-## 9. Future Extensions
+## 9. Migration and Deployment Note
+
+Migration `V4__invalidate_account_sessions.sql` introduces `auth_version` and
+revokes every active, unexpired refresh token created by older application
+versions. Applying V4 therefore requires all users to log in again. Deploy it
+as a coordinated cutover with old application instances stopped; an old
+instance does not understand the new access-token claim and must not keep
+issuing tokens after the migration.
+
+## 10. Future Extensions
 
 The following features are outside the first version:
 

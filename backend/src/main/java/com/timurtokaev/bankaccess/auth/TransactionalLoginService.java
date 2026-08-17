@@ -74,7 +74,8 @@ public class TransactionalLoginService {
                 accessTokenService.issue(
                         user.getId(),
                         user.getUsername(),
-                        permissions.permissionCodes()
+                        permissions.permissionCodes(),
+                        user.getAuthVersion()
                 );
 
         IssuedRefreshToken refreshToken =

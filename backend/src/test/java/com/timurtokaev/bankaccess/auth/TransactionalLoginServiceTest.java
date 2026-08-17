@@ -39,6 +39,8 @@ class TransactionalLoginServiceTest {
                     "2026-09-15T12:00:00Z"
             );
 
+    private static final long AUTH_VERSION = 7L;
+
     @Mock
     private LoginStateService loginStateService;
 
@@ -123,6 +125,9 @@ class TransactionalLoginServiceTest {
         when(user.getUsername())
                 .thenReturn("admin");
 
+        when(user.getAuthVersion())
+                .thenReturn(AUTH_VERSION);
+
         when(effectivePermissionService.resolveFor(user))
                 .thenReturn(permissions);
 
@@ -130,7 +135,8 @@ class TransactionalLoginServiceTest {
                 accessTokenService.issue(
                         USER_ID,
                         "admin",
-                        permissionCodes
+                        permissionCodes,
+                        AUTH_VERSION
                 )
         ).thenReturn(accessToken);
 
@@ -176,7 +182,8 @@ class TransactionalLoginServiceTest {
         verify(accessTokenService).issue(
                 USER_ID,
                 "admin",
-                permissionCodes
+                permissionCodes,
+                AUTH_VERSION
         );
         verify(refreshTokenService).issue(user);
     }

@@ -1,7 +1,9 @@
 package com.timurtokaev.bankaccess.auth;
 
+import com.timurtokaev.bankaccess.audit.AuditLogWriter;
 import com.timurtokaev.bankaccess.user.User;
 import com.timurtokaev.bankaccess.user.UserRepository;
+import com.timurtokaev.bankaccess.user.UserSessionRevoker;
 import com.timurtokaev.bankaccess.user.UserStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,28 +13,41 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class LoginStateService {
 
+    private static final Map<String, Object> LOGIN_DETAILS =
+            Map.of(
+                    "authenticationMethod",
+                    "PASSWORD"
+            );
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final LoginSecurityProperties loginProperties;
     private final Clock clock;
+    private final AuditLogWriter auditLogWriter;
+    private final UserSessionRevoker userSessionRevoker;
     private final String dummyPasswordHash;
 
     public LoginStateService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             LoginSecurityProperties loginProperties,
-            Clock clock
+            Clock clock,
+            AuditLogWriter auditLogWriter,
+            UserSessionRevoker userSessionRevoker
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.loginProperties = loginProperties;
         this.clock = clock;
+        this.auditLogWriter = auditLogWriter;
+        this.userSessionRevoker = userSessionRevoker;
 
         this.dummyPasswordHash = passwordEncoder.encode(
                 "dummy-login-password-"
@@ -58,6 +73,11 @@ public class LoginStateService {
                     passwordCandidate
             );
 
+            recordLoginFailure(
+                    null,
+                    null
+            );
+
             return Optional.empty();
         }
 
@@ -69,6 +89,11 @@ public class LoginStateService {
         if (storedUser.isEmpty()) {
             performDummyPasswordCheck(
                     passwordCandidate
+            );
+
+            recordLoginFailure(
+                    null,
+                    normalizedUsername
             );
 
             return Optional.empty();
@@ -85,6 +110,11 @@ public class LoginStateService {
         OffsetDateTime now = currentTime();
 
         if (user.getStatus() == UserStatus.INACTIVE) {
+            recordLoginFailure(
+                    user.getId(),
+                    user.getUsername()
+            );
+
             return Optional.empty();
         }
 
@@ -94,30 +124,54 @@ public class LoginStateService {
 
             if (lockedUntil == null
                     || lockedUntil.isAfter(now)) {
+                recordLoginFailure(
+                        user.getId(),
+                        user.getUsername()
+                );
+
                 return Optional.empty();
             }
 
-            user.setStatus(UserStatus.ACTIVE);
+            userSessionRevoker.revokeAllActiveForUser(
+                    user.getId()
+            );
+
+            user.changeStatus(UserStatus.ACTIVE);
             user.setFailedLoginAttempts(0);
             user.setLockedUntil(null);
         }
 
         if (user.getStatus() != UserStatus.ACTIVE) {
+            recordLoginFailure(
+                    user.getId(),
+                    user.getUsername()
+            );
+
             return Optional.empty();
         }
 
         if (!passwordMatches) {
-            recordFailedAttempt(user, now);
+            recordFailedAttempt(
+                    user,
+                    now
+            );
+
+            recordLoginFailure(
+                    user.getId(),
+                    user.getUsername()
+            );
 
             return Optional.empty();
         }
 
-        user.setStatus(UserStatus.ACTIVE);
+        user.changeStatus(UserStatus.ACTIVE);
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
         user.setLastLoginAt(now);
 
         userRepository.saveAndFlush(user);
+
+        recordLoginSuccess(user);
 
         return Optional.of(
                 new VerifiedLogin(
@@ -147,7 +201,7 @@ public class LoginStateService {
         user.setFailedLoginAttempts(nextAttempts);
 
         if (nextAttempts >= maximumAttempts) {
-            user.setStatus(UserStatus.LOCKED);
+            user.changeStatus(UserStatus.LOCKED);
 
             user.setLockedUntil(
                     failedAt.plus(
@@ -155,11 +209,40 @@ public class LoginStateService {
                     )
             );
         } else {
-            user.setStatus(UserStatus.ACTIVE);
+            user.changeStatus(UserStatus.ACTIVE);
             user.setLockedUntil(null);
         }
 
         userRepository.saveAndFlush(user);
+    }
+
+    private void recordLoginSuccess(
+            User user
+    ) {
+        auditLogWriter.write(
+                user.getId(),
+                user.getUsername(),
+                "LOGIN",
+                "USER",
+                user.getId(),
+                "SUCCESS",
+                LOGIN_DETAILS
+        );
+    }
+
+    private void recordLoginFailure(
+            UUID targetUserId,
+            String attemptedUsername
+    ) {
+        auditLogWriter.write(
+                null,
+                attemptedUsername,
+                "LOGIN",
+                "USER",
+                targetUserId,
+                "FAILURE",
+                LOGIN_DETAILS
+        );
     }
 
     private void performDummyPasswordCheck(

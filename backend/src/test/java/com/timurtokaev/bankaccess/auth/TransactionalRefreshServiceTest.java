@@ -131,7 +131,8 @@ class TransactionalRefreshServiceTest {
                 accessTokenService.issue(
                         USER_ID,
                         "admin",
-                        permissions.permissionCodes()
+                        permissions.permissionCodes(),
+                        user.getAuthVersion()
                 )
         ).thenReturn(issuedAccessToken);
 
@@ -178,7 +179,8 @@ class TransactionalRefreshServiceTest {
                 .issue(
                         USER_ID,
                         "admin",
-                        permissions.permissionCodes()
+                        permissions.permissionCodes(),
+                        user.getAuthVersion()
                 );
     }
 
@@ -299,7 +301,7 @@ class TransactionalRefreshServiceTest {
                 USER_ID
         );
 
-        user.setStatus(status);
+        user.changeStatus(status);
 
         return user;
     }
