@@ -4,6 +4,9 @@ import com.timurtokaev.bankaccess.rolepermission.dto.RolePermissionGrantRequest;
 import com.timurtokaev.bankaccess.rolepermission.dto.RolePermissionResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,9 +49,14 @@ public class RolePermissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public RolePermissionResponse grant(
             @PathVariable UUID roleId,
-            @Valid @RequestBody RolePermissionGrantRequest request
+            @Valid @RequestBody RolePermissionGrantRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        return rolePermissionService.grant(roleId, request);
+        return rolePermissionService.grant(
+                roleId,
+                request,
+                actorUserId(jwt)
+        );
     }
 
     @DeleteMapping(
@@ -57,8 +65,24 @@ public class RolePermissionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revoke(
             @PathVariable UUID roleId,
-            @PathVariable UUID permissionId
+            @PathVariable UUID permissionId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        rolePermissionService.revoke(roleId, permissionId);
+        rolePermissionService.revoke(
+                roleId,
+                permissionId,
+                actorUserId(jwt)
+        );
+    }
+
+    private UUID actorUserId(Jwt jwt) {
+        try {
+            return UUID.fromString(jwt.getSubject());
+        } catch (RuntimeException exception) {
+            throw new AccessDeniedException(
+                    "Authenticated actor is invalid",
+                    exception
+            );
+        }
     }
 }

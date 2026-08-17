@@ -56,4 +56,46 @@ public interface UserRoleRepository
             @Param("activeStatus") UserStatus activeStatus,
             @Param("now") OffsetDateTime now
     );
+
+    @Query("""
+            SELECT userRole
+            FROM UserRole userRole
+            WHERE userRole.user.id = :userId
+              AND userRole.user.status = :activeStatus
+              AND userRole.role.code = :roleCode
+              AND userRole.role.systemRole = true
+              AND userRole.role.active = true
+              AND (
+                    userRole.expiresAt IS NULL
+                    OR userRole.expiresAt > :now
+              )
+            """)
+    List<UserRole> findEffectiveSystemRoleAssignments(
+            @Param("userId") UUID userId,
+            @Param("activeStatus") UserStatus activeStatus,
+            @Param("roleCode") String roleCode,
+            @Param("now") OffsetDateTime now
+    );
+
+    @Query("""
+            SELECT DISTINCT userRole
+            FROM UserRole userRole,
+                 RolePermission rolePermission
+            WHERE userRole.user.id = :userId
+              AND userRole.user.status = :activeStatus
+              AND userRole.role.id = rolePermission.role.id
+              AND userRole.role.active = true
+              AND rolePermission.permission.active = true
+              AND rolePermission.permission.code = :permissionCode
+              AND (
+                    userRole.expiresAt IS NULL
+                    OR userRole.expiresAt > :now
+              )
+            """)
+    List<UserRole> findEffectiveRoleAssignmentsProvidingPermission(
+            @Param("userId") UUID userId,
+            @Param("activeStatus") UserStatus activeStatus,
+            @Param("permissionCode") String permissionCode,
+            @Param("now") OffsetDateTime now
+    );
 }

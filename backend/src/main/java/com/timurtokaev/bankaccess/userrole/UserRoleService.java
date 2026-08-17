@@ -25,18 +25,21 @@ public class UserRoleService {
     private final EffectivePermissionService effectivePermissionService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final DelegationPolicy delegationPolicy;
 
     public UserRoleService(
             UserRoleRepository userRoleRepository,
             UserRepository userRepository,
             RoleRepository roleRepository,
-            EffectivePermissionService effectivePermissionService
+            EffectivePermissionService effectivePermissionService,
+            DelegationPolicy delegationPolicy
     ) {
         this.userRoleRepository = userRoleRepository;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.effectivePermissionService =
                 effectivePermissionService;
+        this.delegationPolicy = delegationPolicy;
     }
 
     public List<UserRoleResponse> findAllByUser(
@@ -84,7 +87,8 @@ public class UserRoleService {
     @Transactional
     public UserRoleResponse assign(
             UUID userId,
-            UserRoleAssignRequest request
+            UserRoleAssignRequest request,
+            UUID actorUserId
     ) {
         User user = getUser(userId);
         Role role = getRole(request.roleId());
@@ -114,6 +118,13 @@ public class UserRoleService {
                         assignedAt
                 );
 
+        User assignedBy = delegationPolicy
+                .requireCanAssignRole(
+                        actorUserId,
+                        role,
+                        expiresAt
+                );
+
         UserRoleId id = new UserRoleId(
                 user.getId(),
                 role.getId()
@@ -132,7 +143,7 @@ public class UserRoleService {
         UserRole userRole = new UserRole(
                 user,
                 role,
-                null,
+                assignedBy,
                 assignedAt,
                 expiresAt
         );
@@ -146,9 +157,16 @@ public class UserRoleService {
     @Transactional
     public void revoke(
             UUID userId,
-            UUID roleId
+            UUID roleId,
+            UUID actorUserId
     ) {
         getUser(userId);
+        Role role = getRole(roleId);
+
+        delegationPolicy.requireCanRevokeRole(
+                actorUserId,
+                role
+        );
 
         UserRoleId id = new UserRoleId(
                 userId,

@@ -4,6 +4,9 @@ import com.timurtokaev.bankaccess.userrole.dto.UserRoleAssignRequest;
 import com.timurtokaev.bankaccess.userrole.dto.UserRoleResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,17 +54,38 @@ public class UserRoleController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserRoleResponse assign(
             @PathVariable UUID userId,
-            @Valid @RequestBody UserRoleAssignRequest request
+            @Valid @RequestBody UserRoleAssignRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        return userRoleService.assign(userId, request);
+        return userRoleService.assign(
+                userId,
+                request,
+                actorUserId(jwt)
+        );
     }
 
     @DeleteMapping("/users/{userId}/roles/{roleId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revoke(
             @PathVariable UUID userId,
-            @PathVariable UUID roleId
+            @PathVariable UUID roleId,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        userRoleService.revoke(userId, roleId);
+        userRoleService.revoke(
+                userId,
+                roleId,
+                actorUserId(jwt)
+        );
+    }
+
+    private UUID actorUserId(Jwt jwt) {
+        try {
+            return UUID.fromString(jwt.getSubject());
+        } catch (RuntimeException exception) {
+            throw new AccessDeniedException(
+                    "Authenticated actor is invalid",
+                    exception
+            );
+        }
     }
 }

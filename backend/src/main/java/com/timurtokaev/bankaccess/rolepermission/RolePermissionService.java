@@ -8,6 +8,7 @@ import com.timurtokaev.bankaccess.role.Role;
 import com.timurtokaev.bankaccess.role.RoleRepository;
 import com.timurtokaev.bankaccess.rolepermission.dto.RolePermissionGrantRequest;
 import com.timurtokaev.bankaccess.rolepermission.dto.RolePermissionResponse;
+import com.timurtokaev.bankaccess.userrole.DelegationPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,15 +22,18 @@ public class RolePermissionService {
     private final RolePermissionRepository rolePermissionRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final DelegationPolicy delegationPolicy;
 
     public RolePermissionService(
             RolePermissionRepository rolePermissionRepository,
             RoleRepository roleRepository,
-            PermissionRepository permissionRepository
+            PermissionRepository permissionRepository,
+            DelegationPolicy delegationPolicy
     ) {
         this.rolePermissionRepository = rolePermissionRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.delegationPolicy = delegationPolicy;
     }
 
     public List<RolePermissionResponse> findAllByRole(
@@ -61,7 +65,8 @@ public class RolePermissionService {
     @Transactional
     public RolePermissionResponse grant(
             UUID roleId,
-            RolePermissionGrantRequest request
+            RolePermissionGrantRequest request,
+            UUID actorUserId
     ) {
         Role role = getRole(roleId);
         Permission permission =
@@ -82,6 +87,11 @@ public class RolePermissionService {
                             + permission.getCode()
             );
         }
+
+        delegationPolicy.requireCanGrantPermission(
+                actorUserId,
+                permission
+        );
 
         RolePermissionId id = new RolePermissionId(
                 role.getId(),
@@ -112,7 +122,8 @@ public class RolePermissionService {
     @Transactional
     public void revoke(
             UUID roleId,
-            UUID permissionId
+            UUID permissionId,
+            UUID actorUserId
     ) {
         Role role = getRole(roleId);
 
@@ -133,6 +144,11 @@ public class RolePermissionService {
                                                 + permissionId
                                 )
                         );
+
+        delegationPolicy.requireCanRevokePermission(
+                actorUserId,
+                rolePermission.getPermission()
+        );
 
         rolePermissionRepository.delete(rolePermission);
         rolePermissionRepository.flush();
