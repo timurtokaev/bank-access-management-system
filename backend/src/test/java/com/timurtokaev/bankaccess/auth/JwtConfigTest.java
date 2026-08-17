@@ -1,6 +1,8 @@
 package com.timurtokaev.bankaccess.auth;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -8,12 +10,14 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class JwtConfigTest {
 
@@ -90,6 +94,57 @@ class JwtConfigTest {
                 decoded.getClaimAsStringList(
                         "permissions"
                 )
+        );
+    }
+
+    @Test
+    void shouldConvertPermissionClaimsToAuthoritiesWithoutPrefix() {
+        JwtConfig config = new JwtConfig();
+
+        JwtAuthenticationConverter converter =
+                config.jwtAuthenticationConverter();
+
+        Jwt jwt = Jwt.withTokenValue(
+                        "test-token"
+                )
+                .header(
+                        "alg",
+                        "HS256"
+                )
+                .claim(
+                        "sub",
+                        "00000000-0000-4000-8000-000000000001"
+                )
+                .claim(
+                        "permissions",
+                        List.of(
+                                "USER_VIEW",
+                                "ROLE_VIEW"
+                        )
+                )
+                .build();
+
+        AbstractAuthenticationToken authentication =
+                converter.convert(jwt);
+
+        assertNotNull(authentication);
+
+        List<String> authorities =
+                authentication.getAuthorities()
+                        .stream()
+                        .map(
+                                GrantedAuthority::getAuthority
+                        )
+                        .sorted()
+                        .toList();
+
+        assertEquals(
+                List.of(
+                        "FACTOR_BEARER",
+                        "ROLE_VIEW",
+                        "USER_VIEW"
+                ),
+                authorities
         );
     }
 }

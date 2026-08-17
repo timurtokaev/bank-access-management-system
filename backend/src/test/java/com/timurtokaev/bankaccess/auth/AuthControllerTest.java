@@ -1,5 +1,7 @@
 package com.timurtokaev.bankaccess.auth;
 
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import com.timurtokaev.bankaccess.auth.dto.AuthTokenResponse;
 import com.timurtokaev.bankaccess.common.error.UnauthorizedException;
 import com.timurtokaev.bankaccess.config.SecurityConfig;
@@ -17,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,6 +35,12 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
+    @MockitoBean
+    private JwtAuthenticationConverter jwtAuthenticationConverter;
 
     @Test
     void shouldAllowLoginWithoutCsrfToken()
@@ -230,5 +239,17 @@ class AuthControllerTest {
                         jsonPath("$.message")
                                 .value("Authentication failed")
                 );
+    }
+    @Test
+    void shouldRequireAuthenticationForBusinessApi()
+            throws Exception {
+        mockMvc.perform(
+                        get("/api/departments")
+                )
+                .andExpect(
+                        status().isUnauthorized()
+                );
+
+        verifyNoInteractions(authService);
     }
 }
