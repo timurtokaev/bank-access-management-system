@@ -1,7 +1,5 @@
 package com.timurtokaev.bankaccess.auth;
 
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import com.timurtokaev.bankaccess.auth.dto.AuthTokenResponse;
 import com.timurtokaev.bankaccess.common.error.UnauthorizedException;
 import com.timurtokaev.bankaccess.config.SecurityConfig;
@@ -10,16 +8,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -240,6 +241,55 @@ class AuthControllerTest {
                                 .value("Authentication failed")
                 );
     }
+
+    @Test
+    void shouldAllowLogoutWithoutAuthenticationOrCsrfToken()
+            throws Exception {
+        mockMvc.perform(
+                        post("/api/auth/logout")
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .content("""
+                                        {
+                                          "refreshToken": "%s"
+                                        }
+                                        """.formatted(
+                                        VALID_REFRESH_TOKEN
+                                ))
+                )
+                .andExpect(
+                        status().isNoContent()
+                );
+
+        verify(authService).logout(any());
+    }
+
+    @Test
+    void shouldRejectInvalidLogoutRequest()
+            throws Exception {
+        mockMvc.perform(
+                        post("/api/auth/logout")
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .content("""
+                                        {
+                                          "refreshToken": "invalid-token"
+                                        }
+                                        """)
+                )
+                .andExpect(
+                        status().isBadRequest()
+                )
+                .andExpect(
+                        jsonPath("$.fieldErrors.refreshToken")
+                                .exists()
+                );
+
+        verifyNoInteractions(authService);
+    }
+
     @Test
     void shouldRequireAuthenticationForBusinessApi()
             throws Exception {

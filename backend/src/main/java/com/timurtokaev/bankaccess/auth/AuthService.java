@@ -11,16 +11,21 @@ public class AuthService {
 
     private final TransactionalLoginService transactionalLoginService;
     private final TransactionalRefreshService transactionalRefreshService;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(
             TransactionalLoginService transactionalLoginService,
-            TransactionalRefreshService transactionalRefreshService
+            TransactionalRefreshService transactionalRefreshService,
+            RefreshTokenService refreshTokenService
     ) {
         this.transactionalLoginService =
                 transactionalLoginService;
 
         this.transactionalRefreshService =
                 transactionalRefreshService;
+
+        this.refreshTokenService =
+                refreshTokenService;
     }
 
     public AuthTokenResponse login(
@@ -52,6 +57,20 @@ public class AuthService {
         }
 
         return transactionalRefreshService.execute(
+                request.refreshToken()
+        );
+    }
+
+    public void logout(
+            RefreshRequest request
+    ) {
+        if (request == null) {
+            throw new IllegalArgumentException(
+                    "Logout request must not be null"
+            );
+        }
+
+        refreshTokenService.revoke(
                 request.refreshToken()
         );
     }

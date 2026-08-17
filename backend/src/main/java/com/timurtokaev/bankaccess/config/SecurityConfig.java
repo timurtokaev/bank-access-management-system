@@ -24,6 +24,7 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/refresh",
+                                "/api/auth/logout",
                                 "/api/departments/**",
                                 "/api/users/**",
                                 "/api/permissions/**",
@@ -41,7 +42,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/auth/login",
-                                "/api/auth/refresh"
+                                "/api/auth/refresh",
+                                "/api/auth/logout"
                         ).permitAll()
 
                         // User role assignments
