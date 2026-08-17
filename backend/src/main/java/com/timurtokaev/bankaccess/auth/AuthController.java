@@ -2,6 +2,7 @@ package com.timurtokaev.bankaccess.auth;
 
 import com.timurtokaev.bankaccess.auth.dto.AuthTokenResponse;
 import com.timurtokaev.bankaccess.auth.dto.LoginRequest;
+import com.timurtokaev.bankaccess.auth.dto.RefreshRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,5 +26,12 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request
     ) {
         return authService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public AuthTokenResponse refresh(
+            @Valid @RequestBody RefreshRequest request
+    ) {
+        return authService.refresh(request);
     }
 }

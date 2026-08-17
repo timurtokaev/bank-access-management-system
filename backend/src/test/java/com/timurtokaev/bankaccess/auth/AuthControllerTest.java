@@ -24,6 +24,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class AuthControllerTest {
 
+    private static final String VALID_REFRESH_TOKEN =
+            "A".repeat(43);
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -123,6 +126,104 @@ class AuthControllerTest {
                                           "password": "wrong-password"
                                         }
                                         """)
+                )
+                .andExpect(status().isUnauthorized())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Authentication failed")
+                );
+    }
+
+    @Test
+    void shouldAllowRefreshWithoutCsrfToken()
+            throws Exception {
+        AuthTokenResponse response =
+                new AuthTokenResponse(
+                        "Bearer",
+                        "new-access-token",
+                        OffsetDateTime.parse(
+                                "2026-08-16T12:20:00Z"
+                        ),
+                        "new-refresh-token",
+                        OffsetDateTime.parse(
+                                "2026-09-15T12:10:00Z"
+                        )
+                );
+
+        when(
+                authService.refresh(any())
+        ).thenReturn(response);
+
+        mockMvc.perform(
+                        post("/api/auth/refresh")
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .content("""
+                                        {
+                                          "refreshToken": "%s"
+                                        }
+                                        """.formatted(
+                                        VALID_REFRESH_TOKEN
+                                ))
+                )
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.tokenType")
+                                .value("Bearer")
+                )
+                .andExpect(
+                        jsonPath("$.accessToken")
+                                .value("new-access-token")
+                )
+                .andExpect(
+                        jsonPath("$.refreshToken")
+                                .value("new-refresh-token")
+                );
+    }
+
+    @Test
+    void shouldRejectInvalidRefreshRequest()
+            throws Exception {
+        mockMvc.perform(
+                        post("/api/auth/refresh")
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .content("""
+                                        {
+                                          "refreshToken": "invalid-token"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.fieldErrors.refreshToken")
+                                .exists()
+                );
+
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void shouldReturnUnauthorizedForInvalidRefreshToken()
+            throws Exception {
+        when(
+                authService.refresh(any())
+        ).thenThrow(new UnauthorizedException());
+
+        mockMvc.perform(
+                        post("/api/auth/refresh")
+                                .contentType(
+                                        MediaType.APPLICATION_JSON
+                                )
+                                .content("""
+                                        {
+                                          "refreshToken": "%s"
+                                        }
+                                        """.formatted(
+                                        VALID_REFRESH_TOKEN
+                                ))
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(

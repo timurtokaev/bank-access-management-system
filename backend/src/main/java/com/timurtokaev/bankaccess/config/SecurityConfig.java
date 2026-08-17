@@ -20,6 +20,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 "/api/auth/login",
+                                "/api/auth/refresh",
                                 "/api/departments/**",
                                 "/api/users/**",
                                 "/api/permissions/**",
@@ -29,7 +30,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 HttpMethod.POST,
-                                "/api/auth/login"
+                                "/api/auth/login",
+                                "/api/auth/refresh"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/departments/**",
