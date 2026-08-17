@@ -46,6 +46,12 @@ public class SecurityConfig {
                                 "/api/auth/logout"
                         ).permitAll()
 
+                        // Audit logs
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/audit-logs"
+                        ).hasAuthority("AUDIT_LOG_VIEW")
+
                         // User role assignments
                         .requestMatchers(
                                 HttpMethod.GET,
