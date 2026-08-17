@@ -11,12 +11,12 @@ public class AuthService {
 
     private final TransactionalLoginService transactionalLoginService;
     private final TransactionalRefreshService transactionalRefreshService;
-    private final RefreshTokenService refreshTokenService;
+    private final TransactionalLogoutService transactionalLogoutService;
 
     public AuthService(
             TransactionalLoginService transactionalLoginService,
             TransactionalRefreshService transactionalRefreshService,
-            RefreshTokenService refreshTokenService
+            TransactionalLogoutService transactionalLogoutService
     ) {
         this.transactionalLoginService =
                 transactionalLoginService;
@@ -24,8 +24,8 @@ public class AuthService {
         this.transactionalRefreshService =
                 transactionalRefreshService;
 
-        this.refreshTokenService =
-                refreshTokenService;
+        this.transactionalLogoutService =
+                transactionalLogoutService;
     }
 
     public AuthTokenResponse login(
@@ -70,7 +70,7 @@ public class AuthService {
             );
         }
 
-        refreshTokenService.revoke(
+        transactionalLogoutService.execute(
                 request.refreshToken()
         );
     }

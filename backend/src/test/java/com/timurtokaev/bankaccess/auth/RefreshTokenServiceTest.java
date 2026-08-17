@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
@@ -334,6 +335,94 @@ class RefreshTokenServiceTest {
         verifyNoInteractions(
                 userRepository,
                 refreshTokenRepository
+        );
+    }
+
+    @Test
+    void shouldReturnRevokedTokenOwnerWhenTokenIsRevoked() {
+        User user = createUser(
+                UserStatus.ACTIVE
+        );
+
+        RefreshToken storedToken =
+                createStoredToken(user);
+
+        when(
+                refreshTokenRepository
+                        .findByTokenHashForUpdate(
+                                OLD_TOKEN_HASH
+                        )
+        ).thenReturn(
+                Optional.of(storedToken)
+        );
+
+        Optional<RevokedRefreshToken> result =
+                refreshTokenService.revoke(
+                        OLD_RAW_TOKEN
+                );
+
+        assertTrue(result.isPresent());
+
+        RevokedRefreshToken revokedToken =
+                result.orElseThrow();
+
+        assertEquals(
+                USER_ID,
+                revokedToken.userId()
+        );
+
+        assertEquals(
+                "admin",
+                revokedToken.username()
+        );
+
+        assertEquals(
+                NOW,
+                storedToken.getRevokedAt()
+        );
+
+        verify(refreshTokenRepository)
+                .saveAndFlush(storedToken);
+
+        verifyNoInteractions(
+                userRepository,
+                secureRandom
+        );
+    }
+
+    @Test
+    void shouldReturnEmptyWhenTokenDoesNotExist() {
+        when(
+                refreshTokenRepository
+                        .findByTokenHashForUpdate(
+                                OLD_TOKEN_HASH
+                        )
+        ).thenReturn(
+                Optional.empty()
+        );
+
+        Optional<RevokedRefreshToken> result =
+                refreshTokenService.revoke(
+                        OLD_RAW_TOKEN
+                );
+
+        assertTrue(result.isEmpty());
+
+        verify(refreshTokenRepository)
+                .findByTokenHashForUpdate(
+                        OLD_TOKEN_HASH
+                );
+
+        verify(
+                refreshTokenRepository,
+                never()
+        ).saveAndFlush(
+                any(RefreshToken.class)
+        );
+
+        verifyNoInteractions(
+                userRepository,
+                secureRandom
         );
     }
 

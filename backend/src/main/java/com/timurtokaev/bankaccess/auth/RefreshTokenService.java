@@ -111,25 +111,44 @@ public class RefreshTokenService implements UserSessionRevoker {
     }
 
     @Transactional
-    public void revoke(String rawToken) {
+    public Optional<RevokedRefreshToken> revoke(
+            String rawToken
+    ) {
         String tokenHash = hashRawToken(rawToken);
 
         Optional<RefreshToken> storedToken =
                 refreshTokenRepository
-                        .findByTokenHashForUpdate(tokenHash);
+                        .findByTokenHashForUpdate(
+                                tokenHash
+                        );
 
         if (storedToken.isEmpty()) {
-            return;
+            return Optional.empty();
         }
 
-        RefreshToken refreshToken = storedToken.get();
+        RefreshToken refreshToken =
+                storedToken.get();
 
         if (refreshToken.isRevoked()) {
-            return;
+            return Optional.empty();
         }
 
-        refreshToken.revoke(currentTime());
-        refreshTokenRepository.saveAndFlush(refreshToken);
+        User user = refreshToken.getUser();
+
+        refreshToken.revoke(
+                currentTime()
+        );
+
+        refreshTokenRepository.saveAndFlush(
+                refreshToken
+        );
+
+        return Optional.of(
+                new RevokedRefreshToken(
+                        user.getId(),
+                        user.getUsername()
+                )
+        );
     }
 
     @Transactional
