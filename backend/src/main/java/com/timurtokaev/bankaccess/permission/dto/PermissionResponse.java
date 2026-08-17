@@ -13,6 +13,8 @@ public record PermissionResponse(
 
         String description,
 
+        boolean systemPermission,
+
         boolean active,
 
         OffsetDateTime createdAt,

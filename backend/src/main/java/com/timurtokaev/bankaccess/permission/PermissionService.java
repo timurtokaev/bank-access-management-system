@@ -92,6 +92,11 @@ public class PermissionService {
     ) {
         Permission permission = getPermission(id);
 
+        ensureNotSystemPermission(
+                permission,
+                "System permission cannot be modified: "
+        );
+
         permission.setName(normalizeName(request.name()));
         permission.setDescription(
                 normalizeDescription(request.description())
@@ -106,6 +111,11 @@ public class PermissionService {
     @Transactional
     public void deactivate(UUID id) {
         Permission permission = getPermission(id);
+
+        ensureNotSystemPermission(
+                permission,
+                "System permission cannot be deactivated: "
+        );
 
         if (!permission.isActive()) {
             return;
@@ -132,6 +142,17 @@ public class PermissionService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Permission not found: " + id
                 ));
+    }
+
+    private void ensureNotSystemPermission(
+            Permission permission,
+            String message
+    ) {
+        if (permission.isSystemPermission()) {
+            throw new ConflictException(
+                    message + permission.getCode()
+            );
+        }
     }
 
     private String normalizeCode(String code) {
@@ -206,6 +227,7 @@ public class PermissionService {
                 permission.getCode(),
                 permission.getName(),
                 permission.getDescription(),
+                permission.isSystemPermission(),
                 permission.isActive(),
                 permission.getCreatedAt(),
                 permission.getUpdatedAt()

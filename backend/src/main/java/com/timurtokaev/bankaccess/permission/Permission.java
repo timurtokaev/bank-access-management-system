@@ -43,6 +43,13 @@ public class Permission {
     private String description;
 
     @Column(
+            name = "system_permission",
+            nullable = false,
+            updatable = false
+    )
+    private boolean systemPermission = false;
+
+    @Column(
             name = "active",
             nullable = false
     )
@@ -72,6 +79,7 @@ public class Permission {
         this.code = code;
         this.name = name;
         this.description = description;
+        this.systemPermission = false;
         this.active = true;
     }
 
@@ -115,6 +123,10 @@ public class Permission {
 
     public boolean isActive() {
         return active;
+    }
+
+    public boolean isSystemPermission() {
+        return systemPermission;
     }
 
     public void setActive(boolean active) {
