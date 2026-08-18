@@ -11,6 +11,8 @@ import type {
 
 import './App.css'
 
+import DepartmentsPage from './DepartmentsPage'
+
 type UserStatus =
   | 'ACTIVE'
   | 'INACTIVE'
@@ -118,6 +120,23 @@ function App() {
     return <UsersPage />
   }
 
+if (path === '/departments') {
+  return (
+    <DepartmentsPage
+      layout={(children) => (
+        <AdminLayout
+          active="departments"
+          eyebrow="ORGANIZATION"
+          title="Подразделения"
+          description="Управление организационной структурой и иерархией подразделений."
+        >
+          {children}
+        </AdminLayout>
+      )}
+    />
+  )
+}
+
   return <LoginPage />
 }
 
@@ -182,6 +201,10 @@ function AdminLayout({
                 ? 'nav-item active'
                 : 'nav-item'
             }
+            onClick={() => {
+              window.location.href =
+                '/departments'
+            }}
           >
             Подразделения
           </button>
