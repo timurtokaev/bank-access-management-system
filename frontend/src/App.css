@@ -1277,3 +1277,379 @@ div:last-child {
     font-size: 36px;
   }
 }
+/* =========================================================
+   CREATE USER MODAL
+   ========================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: grid;
+  place-items: center;
+
+  padding: 24px;
+
+  background: rgba(16, 28, 20, 0.48);
+
+  backdrop-filter: blur(5px);
+}
+
+.create-user-modal {
+  width: min(100%, 720px);
+  max-height: calc(100vh - 48px);
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  border: 1px solid #dfe8e1;
+  border-radius: 22px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 28px 80px
+    rgba(15, 40, 23, 0.22);
+}
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  margin-bottom: 28px;
+}
+
+.modal-header h2 {
+  margin: 8px 0 7px;
+
+  color: #18201b;
+
+  font-size: 25px;
+
+  letter-spacing: -0.03em;
+}
+
+.modal-header > div > p:last-child {
+  margin: 0;
+
+  color: #7a857d;
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.modal-close {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  border-radius: 50%;
+
+  background: #f4f7f4;
+  color: #778079;
+
+  font-size: 25px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.modal-close:hover:not(:disabled) {
+  background: #fff0f0;
+  color: #b42318;
+}
+
+.modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   CREATE USER FORM
+   ========================================================= */
+
+.create-user-form {
+  display: grid;
+
+  gap: 22px;
+}
+
+.form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 18px;
+}
+
+.create-user-form label {
+  display: grid;
+
+  gap: 8px;
+
+  color: #364139;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.create-user-form input,
+.create-user-form select {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d9e1db;
+  border-radius: 12px;
+
+  outline: none;
+
+  background: #fbfcfb;
+  color: #1e2821;
+
+  font-size: 13px;
+
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.create-user-form input:hover,
+.create-user-form select:hover {
+  border-color: #c7d1c9;
+}
+
+.create-user-form input:focus,
+.create-user-form select:focus {
+  border-color: #149447;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 0 4px
+    rgba(20, 148, 71, 0.09);
+}
+
+.create-user-form input::placeholder {
+  color: #a7afa9;
+}
+
+.create-user-form select {
+  cursor: pointer;
+}
+
+.create-user-form select:disabled {
+  cursor: wait;
+
+  opacity: 0.65;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+/* =========================================================
+   MODAL ACTIONS
+   ========================================================= */
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid #edf1ee;
+}
+
+.modal-actions .primary-action {
+  min-height: 44px;
+}
+
+.secondary-action {
+  min-height: 44px;
+
+  padding: 0 18px;
+
+  border: 1px solid #dce4de;
+  border-radius: 12px;
+
+  background: #f7f9f7;
+  color: #59645d;
+
+  font-size: 13px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.secondary-action:hover:not(:disabled) {
+  background: #eef4ef;
+  border-color: #cbd8ce;
+}
+
+.secondary-action:disabled,
+.modal-actions .primary-action:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.6;
+}
+
+/* =========================================================
+   MODAL RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .create-user-modal {
+    max-height: calc(100vh - 24px);
+
+    padding: 22px 18px;
+
+    border-radius: 18px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field-wide {
+    grid-column: auto;
+  }
+
+  .modal-actions {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   USER ACTION BUTTONS — POLISHED
+   ========================================================= */
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  min-width: 230px;
+}
+
+.table-action {
+  appearance: none;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #d6e3d9;
+  border-radius: 10px;
+
+  background: #f4f9f5;
+  color: #237a45;
+
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 7px
+    rgba(31, 58, 39, 0.04);
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.table-action:hover:not(:disabled) {
+  border-color: #bdd9c5;
+
+  background: #e9f7ed;
+  color: #11843c;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 5px 12px
+    rgba(18, 132, 60, 0.08);
+}
+
+.table-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.table-action-danger {
+  border-color: #efd9d9;
+
+  background: #fff8f8;
+  color: #b42318;
+}
+
+.table-action-danger:hover:not(:disabled) {
+  border-color: #e9c5c5;
+
+  background: #fff0f0;
+  color: #a11d14;
+
+  box-shadow:
+    0 5px 12px
+    rgba(180, 35, 24, 0.07);
+}
+
+.table-action:disabled {
+  border-color: #e5e8e6;
+
+  background: #f6f7f6;
+  color: #a8afaa;
+
+  cursor: not-allowed;
+
+  box-shadow: none;
+
+  opacity: 0.72;
+}
