@@ -15,6 +15,7 @@ import DepartmentsPage from './DepartmentsPage'
 import RolesPage from './RolesPage'
 import UserRolesModal from './UserRolesModal'
 import PermissionsPage from './PermissionsPage'
+import AuditLogsPage from './AuditLogsPage'
 
 type UserStatus =
   | 'ACTIVE'
@@ -174,6 +175,23 @@ if (path === '/permissions') {
   )
 }
 
+if (path === '/audit') {
+  return (
+    <AuditLogsPage
+      layout={(children) => (
+        <AdminLayout
+          active="audit"
+          eyebrow="SECURITY"
+          title="Журнал аудита"
+          description="Контроль административных действий и событий безопасности."
+        >
+          {children}
+        </AdminLayout>
+      )}
+    />
+  )
+}
+
   return <LoginPage />
 }
 
@@ -280,6 +298,10 @@ function AdminLayout({
                 ? 'nav-item active'
                 : 'nav-item'
             }
+            onClick={() => {
+              window.location.href =
+                '/audit'
+            }}
           >
             Журнал аудита
           </button>
