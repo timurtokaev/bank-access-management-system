@@ -12,6 +12,8 @@ import type {
 import './App.css'
 
 import DepartmentsPage from './DepartmentsPage'
+import RolesPage from './RolesPage'
+import UserRolesModal from './UserRolesModal'
 
 type UserStatus =
   | 'ACTIVE'
@@ -137,6 +139,23 @@ if (path === '/departments') {
   )
 }
 
+if (path === '/roles') {
+  return (
+    <RolesPage
+      layout={(children) => (
+        <AdminLayout
+          active="roles"
+          eyebrow="RBAC"
+          title="Роли"
+          description="Управление ролями и моделями разграничения доступа."
+        >
+          {children}
+        </AdminLayout>
+      )}
+    />
+  )
+}
+
   return <LoginPage />
 }
 
@@ -215,6 +234,10 @@ function AdminLayout({
                 ? 'nav-item active'
                 : 'nav-item'
             }
+            onClick={() => {
+              window.location.href =
+                '/roles'
+            }}
           >
             Роли
           </button>
@@ -401,6 +424,9 @@ function DashboardPage() {
 function UsersPage() {
   const [users, setUsers] =
     useState<UserResponse[]>([])
+
+  const [rolesUser, setRolesUser] =
+    useState<UserResponse | null>(null)
 
   const [departments, setDepartments] =
     useState<DepartmentResponse[]>([])
@@ -1130,6 +1156,16 @@ function UsersPage() {
 
                           <td>
                             <div className="user-actions">
+                             <button
+                               className="table-action"
+                               type="button"
+                               onClick={() =>
+                                 setRolesUser(user)
+                               }
+                             >
+                               Роли
+                             </button>
+
                               <button
                                 className="table-action"
                                 type="button"
@@ -1672,6 +1708,15 @@ function UsersPage() {
           </section>
         </div>
       )}
+
+        {rolesUser && (
+          <UserRolesModal
+            user={rolesUser}
+            onClose={() =>
+              setRolesUser(null)
+            }
+          />
+        )}
     </AdminLayout>
   )
 }
