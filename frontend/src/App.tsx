@@ -14,6 +14,7 @@ import './App.css'
 import DepartmentsPage from './DepartmentsPage'
 import RolesPage from './RolesPage'
 import UserRolesModal from './UserRolesModal'
+import PermissionsPage from './PermissionsPage'
 
 type UserStatus =
   | 'ACTIVE'
@@ -156,6 +157,23 @@ if (path === '/roles') {
   )
 }
 
+if (path === '/permissions') {
+  return (
+    <PermissionsPage
+      layout={(children) => (
+        <AdminLayout
+          active="permissions"
+          eyebrow="RBAC"
+          title="Разрешения"
+          description="Управление системными правами и операциями доступа."
+        >
+          {children}
+        </AdminLayout>
+      )}
+    />
+  )
+}
+
   return <LoginPage />
 }
 
@@ -243,6 +261,10 @@ function AdminLayout({
           </button>
 
           <button
+          onClick={() => {
+            window.location.href =
+              '/permissions'
+          }}
             className={
               active === 'permissions'
                 ? 'nav-item active'
