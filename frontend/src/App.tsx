@@ -13,6 +13,7 @@ import './App.css'
 
 import DepartmentsPage from './DepartmentsPage'
 import RolesPage from './RolesPage'
+import UserRolesModal from './UserRolesModal'
 
 type UserStatus =
   | 'ACTIVE'
@@ -423,6 +424,9 @@ function DashboardPage() {
 function UsersPage() {
   const [users, setUsers] =
     useState<UserResponse[]>([])
+
+  const [rolesUser, setRolesUser] =
+    useState<UserResponse | null>(null)
 
   const [departments, setDepartments] =
     useState<DepartmentResponse[]>([])
@@ -1152,6 +1156,16 @@ function UsersPage() {
 
                           <td>
                             <div className="user-actions">
+                             <button
+                               className="table-action"
+                               type="button"
+                               onClick={() =>
+                                 setRolesUser(user)
+                               }
+                             >
+                               Роли
+                             </button>
+
                               <button
                                 className="table-action"
                                 type="button"
@@ -1694,6 +1708,15 @@ function UsersPage() {
           </section>
         </div>
       )}
+
+        {rolesUser && (
+          <UserRolesModal
+            user={rolesUser}
+            onClose={() =>
+              setRolesUser(null)
+            }
+          />
+        )}
     </AdminLayout>
   )
 }
