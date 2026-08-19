@@ -396,6 +396,119 @@ async function handleLogout() {
 }
 
 function DashboardPage() {
+  const [stats, setStats] = useState<{
+    users: number | null
+    roles: number | null
+    permissions: number | null
+    auditLogs: number | null
+  }>({
+    users: null,
+    roles: null,
+    permissions: null,
+    auditLogs: null,
+  })
+
+  const [statsError, setStatsError] =
+    useState<string | null>(null)
+
+  useEffect(() => {
+    void loadDashboardStats()
+  }, [])
+
+  async function loadDashboardStats() {
+    const accessToken =
+      getAccessToken()
+
+    if (!accessToken) {
+      redirectToLogin()
+      return
+    }
+
+    setStatsError(null)
+
+    try {
+      const endpoints = [
+        '/api/users',
+        '/api/roles',
+        '/api/permissions',
+        '/api/audit-logs',
+      ]
+
+      const responses =
+        await Promise.all(
+          endpoints.map((endpoint) =>
+            fetch(endpoint, {
+              headers: {
+                Authorization:
+                  `Bearer ${accessToken}`,
+              },
+            }),
+          ),
+        )
+
+      if (
+        responses.some(
+          (response) =>
+            response.status === 401,
+        )
+      ) {
+        redirectToLogin()
+        return
+      }
+
+      const failedResponse =
+        responses.find(
+          (response) =>
+            !response.ok,
+        )
+
+      if (failedResponse) {
+        throw new Error(
+          `Не удалось загрузить статистику: HTTP ${failedResponse.status}`,
+        )
+      }
+
+      const [
+        users,
+        roles,
+        permissions,
+        auditLogs,
+      ] = await Promise.all(
+        responses.map(
+          (response) =>
+            response.json(),
+        ),
+      )
+
+      setStats({
+        users: Array.isArray(users)
+          ? users.length
+          : 0,
+
+        roles: Array.isArray(roles)
+          ? roles.length
+          : 0,
+
+        permissions:
+          Array.isArray(permissions)
+            ? permissions.length
+            : 0,
+
+        auditLogs:
+          Array.isArray(auditLogs)
+            ? auditLogs.length
+            : 0,
+      })
+    } catch (exception) {
+      setStatsError(
+        getErrorMessage(
+          exception,
+          'Не удалось загрузить статистику',
+        ),
+      )
+    }
+  }
+
   return (
     <AdminLayout
       active="dashboard"
@@ -403,10 +516,23 @@ function DashboardPage() {
       title="Панель управления"
       description="Управление доступом и контроль административных операций."
     >
+      {statsError && (
+        <div
+          className="login-error"
+          role="alert"
+        >
+          {statsError}
+        </div>
+      )}
+
       <section className="dashboard-stats">
         <article className="stat-card">
           <p>Пользователи</p>
-          <strong>—</strong>
+
+          <strong>
+            {stats.users ?? '—'}
+          </strong>
+
           <span>
             Зарегистрировано в системе
           </span>
@@ -414,7 +540,11 @@ function DashboardPage() {
 
         <article className="stat-card">
           <p>Роли</p>
-          <strong>—</strong>
+
+          <strong>
+            {stats.roles ?? '—'}
+          </strong>
+
           <span>
             Модели разграничения доступа
           </span>
@@ -422,7 +552,11 @@ function DashboardPage() {
 
         <article className="stat-card">
           <p>Разрешения</p>
-          <strong>—</strong>
+
+          <strong>
+            {stats.permissions ?? '—'}
+          </strong>
+
           <span>
             Доступные системные операции
           </span>
@@ -430,9 +564,13 @@ function DashboardPage() {
 
         <article className="stat-card">
           <p>События аудита</p>
-          <strong>—</strong>
+
+          <strong>
+            {stats.auditLogs ?? '—'}
+          </strong>
+
           <span>
-            Последние действия пользователей
+            Последние записи журнала
           </span>
         </article>
       </section>
@@ -467,11 +605,21 @@ function DashboardPage() {
               Пользователи
             </button>
 
-            <button>
+            <button
+              onClick={() => {
+                window.location.href =
+                  '/roles'
+              }}
+            >
               Роли
             </button>
 
-            <button>
+            <button
+              onClick={() => {
+                window.location.href =
+                  '/permissions'
+              }}
+            >
               Разрешения
             </button>
           </div>
@@ -500,9 +648,15 @@ function DashboardPage() {
             контроля и анализа.
           </p>
 
-          <div className="audit-placeholder">
-            Данные аудита подключим
-            на следующем этапе
+          <div className="quick-actions">
+            <button
+              onClick={() => {
+                window.location.href =
+                  '/audit'
+              }}
+            >
+              Открыть журнал аудита
+            </button>
           </div>
         </article>
       </section>
