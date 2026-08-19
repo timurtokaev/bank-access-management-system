@@ -9,6 +9,9 @@ import type {
   ReactNode,
 } from 'react'
 
+import RolePermissionsModal
+  from './RolePermissionsModal'
+
 type RoleResponse = {
   id: string
   code: string
@@ -101,6 +104,11 @@ export default function RolesPage({
     processingRoleId,
     setProcessingRoleId,
   ] = useState<string | null>(null)
+
+  const [
+    permissionsRole,
+    setPermissionsRole,
+  ] = useState<RoleResponse | null>(null)
 
   useEffect(() => {
     void loadRoles()
@@ -784,6 +792,17 @@ export default function RolesPage({
                               <button
                                 className="table-action"
                                 type="button"
+                                disabled={isProcessing}
+                                onClick={() => {
+                                  setPermissionsRole(role)
+                                }}
+                              >
+                                Разрешения
+                              </button>
+
+                              <button
+                                className="table-action"
+                                type="button"
                                 disabled={
                                   role.systemRole ||
                                   isProcessing
@@ -1116,6 +1135,15 @@ export default function RolesPage({
             </section>
           </div>
         )}
+    {permissionsRole && (
+      <RolePermissionsModal
+        role={permissionsRole}
+        onClose={() => {
+          setPermissionsRole(null)
+        }}
+      />
+    )}
+
     </>,
   )
 }
