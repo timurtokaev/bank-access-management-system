@@ -12,6 +12,7 @@ import type {
 import './App.css'
 
 import DepartmentsPage from './DepartmentsPage'
+import RolesPage from './RolesPage'
 
 type UserStatus =
   | 'ACTIVE'
@@ -137,6 +138,23 @@ if (path === '/departments') {
   )
 }
 
+if (path === '/roles') {
+  return (
+    <RolesPage
+      layout={(children) => (
+        <AdminLayout
+          active="roles"
+          eyebrow="RBAC"
+          title="Роли"
+          description="Управление ролями и моделями разграничения доступа."
+        >
+          {children}
+        </AdminLayout>
+      )}
+    />
+  )
+}
+
   return <LoginPage />
 }
 
@@ -215,6 +233,10 @@ function AdminLayout({
                 ? 'nav-item active'
                 : 'nav-item'
             }
+            onClick={() => {
+              window.location.href =
+                '/roles'
+            }}
           >
             Роли
           </button>

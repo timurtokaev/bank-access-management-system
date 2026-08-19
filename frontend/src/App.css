@@ -1758,3 +1758,182 @@ div:last-child {
     width: 100%;
   }
 }
+
+/* =========================================================
+   ROLES
+   ========================================================= */
+
+.roles-panel {
+  min-height: 420px;
+}
+
+.roles-table {
+  min-width: 1180px;
+}
+
+.role-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-width: 210px;
+}
+
+.role-icon {
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  border-radius: 11px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #e4f5e9,
+      #eff9f2
+    );
+
+  color: #148b40;
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.role-name-cell > div:last-child {
+  display: grid;
+  gap: 4px;
+}
+
+.role-name-cell strong {
+  color: #28322b;
+
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.role-name-cell span {
+  display: block;
+
+  max-width: 180px;
+
+  overflow: hidden;
+
+  color: #9aa39d;
+
+  font-size: 9px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-type-badge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 29px;
+
+  padding: 0 10px;
+
+  border: 1px solid #dce4df;
+  border-radius: 999px;
+
+  background: #f7f9f8;
+  color: #707b74;
+
+  font-size: 10px;
+  font-weight: 750;
+
+  white-space: nowrap;
+}
+
+.role-type-system {
+  border-color: #cfe1d4;
+
+  background: #edf7f0;
+  color: #237a45;
+}
+
+.role-description {
+  max-width: 290px;
+
+  color: #69736c;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.role-actions {
+  min-width: 245px;
+}
+
+.role-modal {
+  width: min(100%, 700px);
+}
+
+.role-textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  resize: vertical;
+
+  min-height: 112px;
+
+  padding: 12px 14px;
+
+  border: 1px solid #d9e2dc;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #28322b;
+
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+
+  outline: none;
+
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.role-textarea:focus {
+  border-color: #89c79b;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(40, 167, 69, 0.08);
+}
+
+@media (max-width: 760px) {
+  .role-modal {
+    width: 100%;
+  }
+}
+
+.role-modal .modal-info {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.role-modal .modal-info strong,
+.role-modal .modal-info span {
+  display: block;
+}
+
+.role-modal .modal-info strong {
+  color: #28322b;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.role-modal .modal-info span {
+  color: #8d9891;
+  font-size: 11px;
+}
