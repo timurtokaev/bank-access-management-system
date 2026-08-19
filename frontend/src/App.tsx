@@ -202,6 +202,48 @@ function AdminLayout({
   description,
   children,
 }: AdminLayoutProps) {
+  const [isLoggingOut, setIsLoggingOut] =
+    useState(false)
+
+async function handleLogout() {
+  if (isLoggingOut) {
+    return
+  }
+
+  const refreshToken =
+    sessionStorage.getItem(
+      'refreshToken',
+    )
+
+  setIsLoggingOut(true)
+
+  try {
+    if (refreshToken) {
+      await fetch(
+        '/api/auth/logout',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+
+          body: JSON.stringify({
+            refreshToken,
+          }),
+        },
+      )
+    }
+  } catch {
+    // Локальную сессию очищаем
+    // даже если backend недоступен.
+  } finally {
+    sessionStorage.clear()
+    window.location.href = '/'
+  }
+}
+
   return (
     <main className="dashboard">
       <aside className="sidebar">
@@ -310,12 +352,15 @@ function AdminLayout({
         <div className="sidebar-footer">
           <button
             className="logout-button"
+            type="button"
             onClick={() => {
-              sessionStorage.clear()
-              window.location.href = '/'
+              void handleLogout()
             }}
+            disabled={isLoggingOut}
           >
-            Выйти
+            {isLoggingOut
+              ? 'Выход...'
+              : 'Выйти'}
           </button>
         </div>
       </aside>
